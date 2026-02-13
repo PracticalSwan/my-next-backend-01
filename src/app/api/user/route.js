@@ -2,10 +2,16 @@ import corsHeaders from "@/lib/cors";
 import { getClientPromise } from "@/lib/mongodb";
 import bcrypt from "bcrypt";
 import { NextResponse } from "next/server";
+import {
+  DB_NAME,
+  COLLECTION_USER,
+  HTTP_STATUS,
+  ERROR_MESSAGES,
+} from "@/lib/constants";
 
 export async function OPTIONS(req) {
   return new Response(null, {
-    status: 200,
+    status: HTTP_STATUS.OK,
     headers: corsHeaders,
   });
 }
@@ -18,15 +24,15 @@ export async function GET(req) {
     const skip = (page - 1) * limit;
 
     const client = await getClientPromise();
-    const db = client.db("wad01");
+    const db = client.db(DB_NAME);
 
     const users = await db
-      .collection("user")
+      .collection(COLLECTION_USER)
       .find({}, { projection: { password: 0 } })
       .skip(skip)
       .limit(limit)
       .toArray();
-    const total = await db.collection("user").countDocuments({});
+    const total = await db.collection(COLLECTION_USER).countDocuments({});
 
     return NextResponse.json(
       {
@@ -41,10 +47,10 @@ export async function GET(req) {
       }
     );
   } catch (exception) {
-    console.log("exception", exception.toString());
+    console.error("Get users error:", exception);
     return NextResponse.json(
-      { message: exception.toString() },
-      { status: 400, headers: corsHeaders }
+      { message: exception.message || "Failed to fetch users" },
+      { status: HTTP_STATUS.BAD_REQUEST, headers: corsHeaders }
     );
   }
 }
@@ -60,10 +66,10 @@ export async function POST(req) {
   if (!username || !email || !password) {
     return NextResponse.json(
       {
-        message: "Missing mandatory data",
+        message: ERROR_MESSAGES.MISSING_MANDATORY_DATA,
       },
       {
-        status: 400,
+        status: HTTP_STATUS.BAD_REQUEST,
         headers: corsHeaders,
       },
     );
@@ -71,8 +77,8 @@ export async function POST(req) {
 
   try {
     const client = await getClientPromise();
-    const db = client.db("wad01");
-    const result = await db.collection("user").insertOne({
+    const db = client.db(DB_NAME);
+    const result = await db.collection(COLLECTION_USER).insertOne({
       username: username,
       email: email,
       password: await bcrypt.hash(password, 10),
@@ -86,19 +92,19 @@ export async function POST(req) {
         id: result.insertedId,
       },
       {
-        status: 200,
+        status: HTTP_STATUS.OK,
         headers: corsHeaders,
       },
     );
   } catch (exception) {
-    console.log("exception", exception.toString());
+    console.error("Create user error:", exception);
     const errorMsg = exception.toString();
     let displayErrorMsg = "";
     if (errorMsg.includes("duplicate")) {
       if (errorMsg.includes("username")) {
-        displayErrorMsg = "Duplicate Username!!";
+        displayErrorMsg = ERROR_MESSAGES.DUPLICATE_USERNAME;
       } else if (errorMsg.includes("email")) {
-        displayErrorMsg = "Duplicate Email!!";
+        displayErrorMsg = ERROR_MESSAGES.DUPLICATE_EMAIL;
       }
     }
     return NextResponse.json(
@@ -106,7 +112,7 @@ export async function POST(req) {
         message: displayErrorMsg,
       },
       {
-        status: 400,
+        status: HTTP_STATUS.BAD_REQUEST,
         headers: corsHeaders,
       },
     );

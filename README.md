@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# hello-api
 
-## Getting Started
+Next.js API backend for week 9 assignment.
 
-First, run the development server:
+## Setup
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Default URL: http://localhost:3000
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Profile Management APIs
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All profile endpoints require authentication via HTTP-only cookie token.
 
-## Learn More
+- `GET /api/user/profile`
+	- Returns user profile fields: `_id`, `firstname`, `lastname`, `email`, `profileImage`.
 
-To learn more about Next.js, take a look at the following resources:
+- `PATCH /api/user/profile`
+	- Updates profile name fields (`firstname`, `lastname`).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `POST /api/user/profile/image`
+	- Accepts `multipart/form-data` with field name `file`.
+	- Allows only image MIME types: JPEG, PNG, GIF, WebP.
+	- Stores files in `public/profile-images/` with unguessable generated filenames.
+	- Saves image path in user profile as `/profile-images/<filename>`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `DELETE /api/user/profile/image`
+	- Removes current profile image file and clears `profileImage` in database.
 
-## Deploy on Vercel
+## Notes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Uploaded images are publicly accessible via `/profile-images/<filename>`.
+- File content is stored on backend disk; only file path is stored in MongoDB.
